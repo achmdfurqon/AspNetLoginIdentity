@@ -17,6 +17,7 @@
     </thead>
 
 </table>
+
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -26,7 +27,7 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="Id">Id</label>
+                    <label id="idlabel" for="Id">Id</label>
                     <input type="text" class="form-control" id="roleId" placeholder="Id" />
                 </div>
                 <div class="form-group">
@@ -43,18 +44,18 @@
     </div>
 </div>
 
-<link href="//cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="~/Content/font-awesome.min.css">
 
 @section scripts {
-    <script src="//cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
     <script>
         $(document).ready(function () {
             $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
-    <script>
+    @*<script>
         $(document).ready(function () {
             debugger;
             table = $("#table").DataTable({
@@ -167,6 +168,138 @@
         function PopUpForm() {
             document.getElementById("roleId").disabled = true;
             $("#roleId").val('');
+            $("#roleName").val('');
+            $("#Update").hide();
+            $('#Save').show();
+        }
+
+        function Validate() {
+            debugger;
+            if ($("#roleName").val() == "" || $("#roleName").val() == " ") {
+                Swal.fire('Please Fill Name Role');
+            }
+            else if ($("#roleId").val() == "" || $("#roleId").val() == " ") {
+                Save();
+            } else {
+                Edit();
+            }
+        }
+
+    </script>*@
+    <script>
+        $(document).ready(function () {
+            debugger;
+            table = $("#table").DataTable({
+                "ajax": {
+                    "url": "/Roles/List",
+                    "type": "GET",
+                    "dataType": "json"
+                },
+                "columns": [
+                    { "data": "Name" },
+                    {
+                        "render": function (data, type, row) {
+                            return "<a href='#' data-toggle='tooltip' data-placement='left' title='Edit' class='btn btn-warning' onclick=GetById('" + row.Id + "');><i class='fa fa-pencil'></i> Edit</a> |" +
+                                " <a href='#' data-toggle='tooltip' data-placement='right' title='Delete' class='btn btn-danger' onclick=Delete('" + row.Id + "');><i class='fa fa-trash'></i> Delete</a > ";
+                        }
+                    }
+                ]
+            });
+        });
+
+        function Delete(Id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'red',
+                cancelButtonColor: 'green',
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                debugger;
+                if (result.value) {
+                    $.ajax({
+                        "url": "/Roles/Delete/",
+                        "datatype": "json",
+                        "data": { Id: Id }
+                    }).then((result) => {
+                        debugger;
+                        if (result.data != null) {
+                            Swal.fire('Success', 'Your file has been deleted.', 'success');
+                            table.ajax.reload();
+                        } else {
+                            Swal.fire('Failed', 'Your file not deleted.', 'failed')
+                        }
+                    })
+                }
+            })
+        }
+
+        function Edit() {
+            var role = new Object();
+            role.Id = $("#roleId").val();
+            role.Name = $("#roleName").val();
+            debugger;
+            $.ajax({
+                "url": "/Roles/Edit/",
+                "type": "GET",
+                "datatype": "json",
+                "data": role
+            }).then((result) => {
+                debugger;
+                if (result.data != 0) {
+                  //  debugger;
+                    Swal.fire('Success', 'Your file has been updated.', 'success');
+                    table.ajax.reload();
+                } else {
+                    Swal.fire('Failed', 'Your file not updated.', 'failed')
+                }
+                $("#myModal").modal('hide');
+            })
+        }
+
+        function GetById(Id) {
+            $.ajax({
+                "url": "/Roles/Detail/",
+                "type": "GET",
+                "dataType": "json"
+                ,"data": { id: Id }
+            }).then((result) => {
+                debugger;
+                    document.getElementById("roleId").disabled = true;
+                    $("#roleId").val(result.data.Id);
+                    $("#roleName").val(result.data.Name);
+                    $("#myModal").modal('show');
+                    $("#Update").show();
+                    $("#Save").hide();
+            });
+        }
+
+        function Save() {
+            var role = new Object();
+            role.Name = $("#roleName").val();
+            $.ajax({
+                "url": "/Roles/Create",
+                "type": "POST",
+                "datatype": "json",
+                "data": role
+            }).then((result) => {
+                if (result.data != 0) {
+                    Swal.fire('Success', 'Your file has been inserted.', 'success');
+                    table.ajax.reload();
+                } else {
+                    Swal.fire('Failed', 'Your file not inserted.', 'failed')
+                }
+                $("#myModal").modal('hide');
+            })
+        }
+
+        function PopUpForm() {
+            document.getElementById("roleId").disabled = true;
+            $("#roleId").val('');
+            $("#idlabel").hide();
+            $("#roleId").hide();
             $("#roleName").val('');
             $("#Update").hide();
             $('#Save').show();
